@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 
 const scene = new THREE.Scene();
 
@@ -19,7 +20,10 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1
+renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
+
+document.body.appendChild(VRButton.createButton(renderer));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -341,6 +345,16 @@ function clampCamera() {
 	camera.position.z = Math.max(bounds.minZ, Math.min(bounds.maxZ, camera.position.z));
 }
 
+if (window.DeviceOrientationEvent) {
+	window.addEventListener('deviceorientation', (event) => {
+		const alpha = THREE.MathUtils.degToRad(event.alpha || 0);
+		const beta = THREE.MathUtils.degToRad(event.beta || 0);
+		const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+
+		camera.rotation.set(beta, alpha, -gamma, 'ZYX');
+	}, true);
+}
+
 function animate() {
 	requestAnimationFrame(animate);
 
@@ -353,7 +367,9 @@ function animate() {
 
 	controls.update();
 	clampCamera();
-	renderer.render(scene, camera);
+	renderer.setAnimationLoop(() => {
+		renderer.render(scene, camera);
+	});
 }
 animate();
 
