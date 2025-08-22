@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "npx vite"
+    "dev": "npx vite",
+    "build": "npx vite build",
+    "start": "npx vite preview"
   },
   "keywords": [],
   "author": "",
