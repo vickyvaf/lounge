@@ -479,7 +479,7 @@ renderer.domElement.addEventListener("mouseup", (event) => {
 const escHint = document.createElement("div");
 escHint.textContent = "Press Esc to exit preview";
 escHint.style.position = "fixed";
-escHint.style.bottom = "70px";
+escHint.style.bottom = "20px";
 escHint.style.left = "50%";
 escHint.style.transform = "translateX(-50%)";
 escHint.style.background = "rgba(0,0,0,0.6)";
@@ -492,7 +492,9 @@ escHint.style.zIndex = "1001";
 escHint.style.opacity = "0.7";
 escHint.style.display = 'none';
 
-document.body.appendChild(escHint);
+if (!isMobileDevice()) {
+	document.body.appendChild(escHint);
+}
 
 const link = document.createElement("link");
 link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap";
@@ -505,7 +507,7 @@ const fullscreenBtn = document.createElement("button");
 fullscreenBtn.textContent = "⛶";
 fullscreenBtn.style.position = "fixed";
 fullscreenBtn.style.top = "20px";
-fullscreenBtn.style.right = "20px";
+fullscreenBtn.style.left = "20px";
 fullscreenBtn.style.zIndex = "1002";
 fullscreenBtn.style.background = "rgba(0,0,0,0.6)";
 fullscreenBtn.style.color = "#fff";
