@@ -23,7 +23,13 @@ renderer.toneMappingExposure = 1
 renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 
-document.body.appendChild(VRButton.createButton(renderer));
+function isMobileDevice() {
+	return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
+
+if (isMobileDevice()) {
+	document.body.appendChild(VRButton.createButton(renderer));
+}
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -494,3 +500,37 @@ link.rel = "stylesheet";
 document.head.appendChild(link);
 
 document.body.style.fontFamily = "'Poppins', sans-serif";
+
+const fullscreenBtn = document.createElement("button");
+fullscreenBtn.textContent = "⛶";
+fullscreenBtn.style.position = "fixed";
+fullscreenBtn.style.top = "20px";
+fullscreenBtn.style.right = "20px";
+fullscreenBtn.style.zIndex = "1002";
+fullscreenBtn.style.background = "rgba(0,0,0,0.6)";
+fullscreenBtn.style.color = "#fff";
+fullscreenBtn.style.border = "none";
+fullscreenBtn.style.padding = "8px 12px";
+fullscreenBtn.style.fontSize = "18px";
+fullscreenBtn.style.borderRadius = "4px";
+fullscreenBtn.style.cursor = "pointer";
+fullscreenBtn.style.opacity = "0.8";
+
+fullscreenBtn.addEventListener("mouseenter", () => {
+	fullscreenBtn.style.opacity = "1";
+});
+fullscreenBtn.addEventListener("mouseleave", () => {
+	fullscreenBtn.style.opacity = "0.8";
+});
+
+fullscreenBtn.addEventListener("click", () => {
+	if (!document.fullscreenElement) {
+		document.documentElement.requestFullscreen().catch((err) => {
+			console.warn(`Error attempting to enable fullscreen: ${err.message}`);
+		});
+	} else {
+		document.exitFullscreen();
+	}
+});
+
+document.body.appendChild(fullscreenBtn);
