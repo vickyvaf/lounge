@@ -31,6 +31,16 @@ if (isMobileDevice()) {
 	document.body.appendChild(VRButton.createButton(renderer));
 }
 
+renderer.xr.addEventListener("sessionstart", () => {
+	closeSidebar();
+	sidebar.style.display = "none";
+	escHint.style.display = "none";
+});
+
+renderer.xr.addEventListener("sessionend", () => {
+	sidebar.style.display = "block";
+});
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.minPolarAngle = 0;
@@ -536,3 +546,52 @@ fullscreenBtn.addEventListener("click", () => {
 });
 
 document.body.appendChild(fullscreenBtn);
+
+const mediaQuery = window.matchMedia("(orientation: portrait)");
+let overlay = null;
+
+function createOverlay() {
+	overlay = document.createElement("div");
+	overlay.id = "rotate-overlay";
+	overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 9999;
+    color: white;
+    font-family: sans-serif;
+  `;
+	overlay.innerHTML = `
+    <img src="/previews/rotate_phone.png" alt="Rotate phone" style="width:200px;height:auto;margin-bottom:1rem;" />
+    <h2 style="color: #000">Please switch to <strong>landscape mode</strong></h2>
+  `;
+	document.body.appendChild(overlay);
+}
+
+function removeOverlay() {
+	if (overlay) {
+		overlay.remove();
+		overlay = null;
+	}
+}
+
+function handleOrientationChange(e) {
+	if (e.matches) {
+		if (!overlay) createOverlay();
+	} else {
+		removeOverlay();
+	}
+}
+
+handleOrientationChange(mediaQuery);
+
+mediaQuery.addEventListener("change", handleOrientationChange);
+
