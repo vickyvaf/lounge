@@ -4,6 +4,11 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
 import { VRButton } from 'three/examples/jsm/webxr/VRButton.js';
 
+interface ClickTarget {
+	object: THREE.Object3D;
+	target: THREE.Vector3;
+}
+
 const scene = new THREE.Scene();
 
 const camera = new THREE.PerspectiveCamera(
@@ -17,15 +22,86 @@ camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1
+renderer.toneMappingExposure = 1;
 renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
+
+// --- UI Elements (declared early to avoid temporal dead zone issues) ---
+const sidebar = document.createElement("div");
+sidebar.style.position = "fixed";
+sidebar.style.top = "0";
+sidebar.style.right = "-350px";
+sidebar.style.width = "300px";
+sidebar.style.height = "100%";
+sidebar.style.background = "#fff";
+sidebar.style.boxShadow = "-2px 0 8px rgba(0,0,0,0.2)";
+sidebar.style.padding = "16px";
+sidebar.style.transition = "right 0.3s ease";
+sidebar.style.zIndex = "1000";
+
+const closeBtn = document.createElement("button");
+closeBtn.textContent = "×";
+closeBtn.style.background = "none";
+closeBtn.style.border = "none";
+closeBtn.style.fontSize = "24px";
+closeBtn.style.cursor = "pointer";
+sidebar.appendChild(closeBtn);
+
+const drawerTitle = document.createElement("h3");
+drawerTitle.textContent = "Object Info";
+sidebar.appendChild(drawerTitle);
+
+const drawerImagePreview = document.createElement("img");
+drawerImagePreview.style.width = "100%";
+drawerImagePreview.style.height = "auto";
+drawerImagePreview.style.marginBottom = "10px";
+sidebar.appendChild(drawerImagePreview);
+
+const drawerContent = document.createElement("div");
+sidebar.appendChild(drawerContent);
+
+document.body.appendChild(sidebar);
+
+const escHint = document.createElement("div");
+escHint.textContent = "Press Esc to exit preview";
+escHint.style.position = "fixed";
+escHint.style.bottom = "20px";
+escHint.style.left = "50%";
+escHint.style.transform = "translateX(-50%)";
+escHint.style.background = "rgba(0,0,0,0.6)";
+escHint.style.color = "#fff";
+escHint.style.padding = "6px 12px";
+escHint.style.borderRadius = "4px";
+escHint.style.fontFamily = "'Poppins', sans-serif";
+escHint.style.fontSize = "14px";
+escHint.style.zIndex = "1001";
+escHint.style.opacity = "0.7";
+escHint.style.display = 'none';
 
 function isMobileDevice() {
 	return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
 }
+
+if (!isMobileDevice()) {
+	document.body.appendChild(escHint);
+}
+
+function openSidebar(title: string, content: string, image: string) {
+	drawerTitle.textContent = title;
+	drawerImagePreview.src = image;
+	drawerContent.innerHTML = content;
+	escHint.style.display = 'block';
+	sidebar.style.right = "0";
+}
+
+function closeSidebar() {
+	escHint.style.display = "none";
+	sidebar.style.right = "-350px";
+}
+
+closeBtn.addEventListener("click", closeSidebar);
 
 if (isMobileDevice()) {
 	document.body.appendChild(VRButton.createButton(renderer));
@@ -166,9 +242,9 @@ roof.rotation.x = -Math.PI / 2;
 roof.position.y = 3;
 scene.add(roof);
 
-const clickTargets = [];
+const clickTargets: ClickTarget[] = [];
 
-function registerClickable(object3D, cameraTarget) {
+function registerClickable(object3D: THREE.Object3D, cameraTarget: THREE.Vector3) {
 	clickTargets.push({ object: object3D, target: cameraTarget });
 }
 
@@ -181,13 +257,12 @@ gltfLoader.load("models/simple_sofa.glb", (gltf) => {
 	const sofa = gltf.scene;
 	sofa.scale.set(1.5, 1.5, 1.5);
 	sofa.position.set(-1.8, 0, 0);
-	sofa.rotation.y = 33
-	sofa.name = "sofa"
+	sofa.rotation.y = 33;
+	sofa.name = "sofa";
 
 	sofa.traverse((child) => {
-		if (child.isMesh) {
-
-			child.material = new THREE.MeshStandardMaterial({
+		if ((child as THREE.Mesh).isMesh) {
+			(child as THREE.Mesh).material = new THREE.MeshStandardMaterial({
 				color: 0x666666,
 				roughness: 1,
 				metalness: 0,
@@ -200,21 +275,21 @@ gltfLoader.load("models/simple_sofa.glb", (gltf) => {
 });
 
 gltfLoader.load("models/generic_television_set.glb", (gltf) => {
-	const tv = gltf.scene
-	tv.rotation.y = 11
+	const tv = gltf.scene;
+	tv.rotation.y = 11;
 	tv.scale.set(0.004, 0.004, 0.004);
 	tv.position.set(2, 1.45, 0);
-	tv.name = "tv"
+	tv.name = "tv";
 	scene.add(tv);
 	registerClickable(tv, new THREE.Vector3(0.5, 1.5, 0));
 });
 
 gltfLoader.load("models/tv_stand.glb", (gltf) => {
-	const tvStand = gltf.scene
-	tvStand.rotation.y = 22
+	const tvStand = gltf.scene;
+	tvStand.rotation.y = 22;
 	tvStand.scale.set(0.25, 0.25, 0.25);
 	tvStand.position.set(2, 0, 0);
-	tvStand.name = "tvStand"
+	tvStand.name = "tvStand";
 	scene.add(tvStand);
 	registerClickable(tvStand, new THREE.Vector3(0, 1, 0));
 });
@@ -223,7 +298,7 @@ new RGBELoader()
 	.setPath("hdris/")
 	.load("small_empty_room_1_1k.hdr", (hdrEquirect) => {
 		hdrEquirect.mapping = THREE.EquirectangularReflectionMapping;
-		scene.environmentIntensity = 0.7
+		scene.environmentIntensity = 0.7;
 		scene.environment = hdrEquirect;
 		scene.background = hdrEquirect;
 	});
@@ -245,10 +320,10 @@ window.addEventListener("mouseup", (event) => {
 	});
 });
 
-let animStart = null;
-let startPos, endPos, lookAtTarget;
+let animStart: number | null = null;
+let startPos: THREE.Vector3, endPos: THREE.Vector3, lookAtTarget: THREE.Vector3;
 
-function animateCamera(from, to, lookAt) {
+function animateCamera(from: THREE.Vector3, to: THREE.Vector3, lookAt: THREE.Vector3) {
 	animStart = performance.now();
 	startPos = from.clone();
 	endPos = to.clone();
@@ -280,12 +355,12 @@ window.addEventListener("keydown", (e) => {
 		camera.lookAt(0, 0, 0);
 		controls.target.set(0, 0, 0);
 		controls.update();
-		escHint.style.display = "none"
-		closeSidebar()
+		escHint.style.display = "none";
+		closeSidebar();
 	}
 });
 
-let hoveredRoot = null;
+let hoveredRoot: THREE.Object3D | null = null;
 
 renderer.domElement.addEventListener("mousemove", (event) => {
 	const rect = renderer.domElement.getBoundingClientRect();
@@ -308,15 +383,15 @@ renderer.domElement.addEventListener("mousemove", (event) => {
 			if (hoveredRoot !== root) {
 				if (hoveredRoot) {
 					hoveredRoot.traverse((child) => {
-						if (child.isMesh && child.material && child.material.emissive) {
-							child.material.emissive.set(0x000000);
+						if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material && ((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive) {
+							((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.set(0x000000);
 						}
 					});
 				}
 
 				root.traverse((child) => {
-					if (child.isMesh && child.material && child.material.emissive) {
-						child.material.emissive.set(0x555555);
+					if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material && ((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive) {
+						((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.set(0x555555);
 					}
 				});
 
@@ -325,8 +400,8 @@ renderer.domElement.addEventListener("mousemove", (event) => {
 		} else {
 			if (hoveredRoot) {
 				hoveredRoot.traverse((child) => {
-					if (child.isMesh && child.material && child.material.emissive) {
-						child.material.emissive.set(0x000000);
+					if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material && ((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive) {
+						((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.set(0x000000);
 					}
 				});
 				hoveredRoot = null;
@@ -336,8 +411,8 @@ renderer.domElement.addEventListener("mousemove", (event) => {
 	} else {
 		if (hoveredRoot) {
 			hoveredRoot.traverse((child) => {
-				if (child.isMesh && child.material && child.material.emissive) {
-					child.material.emissive.set(0x000000);
+				if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material && ((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive) {
+					((child as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.set(0x000000);
 				}
 			});
 			hoveredRoot = null;
@@ -374,7 +449,7 @@ if (window.DeviceOrientationEvent) {
 function animate() {
 	requestAnimationFrame(animate);
 
-	if (animStart) {
+	if (animStart !== null) {
 		const t = Math.min((performance.now() - animStart) / 1000, 1);
 		camera.position.lerpVectors(startPos, endPos, t);
 		controls.target.lerp(lookAtTarget, t);
@@ -394,56 +469,6 @@ window.addEventListener("resize", () => {
 	camera.updateProjectionMatrix();
 	renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-const sidebar = document.createElement("div");
-sidebar.style.position = "fixed";
-sidebar.style.top = "0";
-sidebar.style.right = "-350px";
-sidebar.style.width = "300px";
-sidebar.style.height = "100%";
-sidebar.style.background = "#fff";
-sidebar.style.boxShadow = "-2px 0 8px rgba(0,0,0,0.2)";
-sidebar.style.padding = "16px";
-sidebar.style.transition = "right 0.3s ease";
-sidebar.style.zIndex = "1000";
-
-const closeBtn = document.createElement("button");
-closeBtn.textContent = "×";
-closeBtn.style.background = "none";
-closeBtn.style.border = "none";
-closeBtn.style.fontSize = "24px";
-closeBtn.style.cursor = "pointer";
-sidebar.appendChild(closeBtn);
-
-const drawerTitle = document.createElement("h3");
-drawerTitle.textContent = "Object Info";
-sidebar.appendChild(drawerTitle);
-
-const drawerImagePreview = document.createElement("img");
-drawerImagePreview.style.width = "100%";
-drawerImagePreview.style.height = "auto";
-drawerImagePreview.style.marginBottom = "10px";
-sidebar.appendChild(drawerImagePreview);
-
-const drawerContent = document.createElement("div");
-sidebar.appendChild(drawerContent);
-
-document.body.appendChild(sidebar);
-
-function openSidebar(title, content, image) {
-	drawerTitle.textContent = title;
-	drawerImagePreview.src = image
-	drawerContent.innerHTML = content;
-	escHint.style.display = 'block'
-	sidebar.style.right = "0";
-}
-
-function closeSidebar() {
-	escHint.style.display = "none"
-	sidebar.style.right = "-350px";
-}
-
-closeBtn.addEventListener("click", closeSidebar);
 
 renderer.domElement.addEventListener("mouseup", (event) => {
 	if (isDragging) return;
@@ -486,26 +511,6 @@ renderer.domElement.addEventListener("mouseup", (event) => {
 	});
 });
 
-const escHint = document.createElement("div");
-escHint.textContent = "Press Esc to exit preview";
-escHint.style.position = "fixed";
-escHint.style.bottom = "20px";
-escHint.style.left = "50%";
-escHint.style.transform = "translateX(-50%)";
-escHint.style.background = "rgba(0,0,0,0.6)";
-escHint.style.color = "#fff";
-escHint.style.padding = "6px 12px";
-escHint.style.borderRadius = "4px";
-escHint.style.fontFamily = "'Poppins', sans-serif";
-escHint.style.fontSize = "14px";
-escHint.style.zIndex = "1001";
-escHint.style.opacity = "0.7";
-escHint.style.display = 'none';
-
-if (!isMobileDevice()) {
-	document.body.appendChild(escHint);
-}
-
 const link = document.createElement("link");
 link.href = "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap";
 link.rel = "stylesheet";
@@ -541,14 +546,16 @@ fullscreenBtn.addEventListener("click", () => {
 			console.warn(`Error attempting to enable fullscreen: ${err.message}`);
 		});
 	} else {
-		document.exitFullscreen();
+		if (document.exitFullscreen) {
+			document.exitFullscreen();
+		}
 	}
 });
 
 document.body.appendChild(fullscreenBtn);
 
 const mediaQuery = window.matchMedia("(orientation: portrait)");
-let overlay = null;
+let overlay: HTMLDivElement | null = null;
 
 function createOverlay() {
 	overlay = document.createElement("div");
@@ -583,7 +590,7 @@ function removeOverlay() {
 	}
 }
 
-function handleOrientationChange(e) {
+function handleOrientationChange(e: MediaQueryListEvent | MediaQueryList) {
 	if (e.matches) {
 		if (!overlay) createOverlay();
 	} else {
@@ -594,4 +601,3 @@ function handleOrientationChange(e) {
 handleOrientationChange(mediaQuery);
 
 mediaQuery.addEventListener("change", handleOrientationChange);
-
