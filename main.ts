@@ -152,7 +152,6 @@ const floorMaterial = new THREE.MeshStandardMaterial({
 	roughnessMap: roughnessMap,
 	metalnessMap: metalnessMap,
 	aoMap: aoMap,
-	displacementMap: displacementMap,
 	metalness: 0.5,
 	roughness: 0.5,
 });
@@ -204,7 +203,6 @@ const wallMaterial = new THREE.MeshStandardMaterial({
 	roughnessMap: roughnessMapWall,
 	metalnessMap: metalnessMapWall,
 	aoMap: aoMapWall,
-	displacementMap: displacementMapWall,
 	metalness: 0,
 	roughness: 1,
 	side: THREE.DoubleSide,
