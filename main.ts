@@ -28,6 +28,77 @@ renderer.toneMappingExposure = 1;
 renderer.xr.enabled = true;
 document.body.appendChild(renderer.domElement);
 
+// --- Loading UI & Loading Manager ---
+const loadingContainer = document.createElement("div");
+loadingContainer.style.cssText = `
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: #000000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	z-index: 10000;
+	transition: opacity 0.5s ease, visibility 0.5s;
+	font-family: 'Poppins', sans-serif;
+	color: #ffffff;
+`;
+
+const progressContainer = document.createElement("div");
+progressContainer.style.cssText = `
+	width: 200px;
+	height: 2px;
+	background: rgba(255, 255, 255, 0.15);
+	position: relative;
+	margin-bottom: 0.75rem;
+`;
+
+const progressBar = document.createElement("div");
+progressBar.style.cssText = `
+	width: 0%;
+	height: 100%;
+	background: #ffffff;
+	transition: width 0.1s ease-out;
+`;
+
+const progressText = document.createElement("div");
+progressText.textContent = "0%";
+progressText.style.cssText = `
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: rgba(255, 255, 255, 0.6);
+	letter-spacing: 0.05em;
+`;
+
+progressContainer.appendChild(progressBar);
+loadingContainer.appendChild(progressContainer);
+loadingContainer.appendChild(progressText);
+document.body.appendChild(loadingContainer);
+
+const loadingManager = new THREE.LoadingManager();
+
+loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+	const progressPercent = Math.round((itemsLoaded / itemsTotal) * 100);
+	progressBar.style.width = `${progressPercent}%`;
+	progressText.textContent = `${progressPercent}%`;
+};
+
+loadingManager.onLoad = () => {
+	loadingContainer.style.opacity = "0";
+	loadingContainer.style.visibility = "hidden";
+	setTimeout(() => {
+		loadingContainer.remove();
+	}, 500);
+};
+
+loadingManager.onError = (url) => {
+	console.error("Error loading resource: " + url);
+};
+
+
 // --- UI Elements (declared early to avoid temporal dead zone issues) ---
 const sidebar = document.createElement("div");
 sidebar.style.position = "fixed";
@@ -122,7 +193,7 @@ controls.enableDamping = true;
 controls.minPolarAngle = 0;
 controls.maxPolarAngle = Math.PI / 2;
 
-const textureLoader = new THREE.TextureLoader();
+const textureLoader = new THREE.TextureLoader(loadingManager);
 
 const baseColor = textureLoader.load(
 	"textures/Poliigon_WoodFloorAsh_4186/BaseColor.jpg",
@@ -249,7 +320,7 @@ function registerClickable(object3D: THREE.Object3D, cameraTarget: THREE.Vector3
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-const gltfLoader = new GLTFLoader();
+const gltfLoader = new GLTFLoader(loadingManager);
 
 gltfLoader.load("models/simple_sofa.glb", (gltf) => {
 	const sofa = gltf.scene;
@@ -292,7 +363,7 @@ gltfLoader.load("models/tv_stand.glb", (gltf) => {
 	registerClickable(tvStand, new THREE.Vector3(0, 1, 0));
 });
 
-new RGBELoader()
+new RGBELoader(loadingManager)
 	.setPath("hdris/")
 	.load("small_empty_room_1_1k.hdr", (hdrEquirect) => {
 		hdrEquirect.mapping = THREE.EquirectangularReflectionMapping;
