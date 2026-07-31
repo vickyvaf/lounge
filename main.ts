@@ -80,11 +80,12 @@ document.body.appendChild(loadingContainer);
 
 const loadingManager = new THREE.LoadingManager();
 
-loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+loadingManager.onProgress = (_url, itemsLoaded, itemsTotal) => {
 	const progressPercent = Math.round((itemsLoaded / itemsTotal) * 100);
 	progressBar.style.width = `${progressPercent}%`;
 	progressText.textContent = `${progressPercent}%`;
 };
+
 
 loadingManager.onLoad = () => {
 	loadingContainer.style.opacity = "0";
@@ -97,6 +98,33 @@ loadingManager.onLoad = () => {
 loadingManager.onError = (url) => {
 	console.error("Error loading resource: " + url);
 };
+
+import { fetchWithCache } from "./assetCache";
+
+// Map to track active Blob URLs created for cached assets
+const blobUrlMap = new Map<string, string>();
+
+loadingManager.setURLModifier((url) => {
+	if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+
+	if (blobUrlMap.has(url)) {
+		return blobUrlMap.get(url)!;
+	}
+
+	fetchWithCache(url).then((blobUrl) => {
+		blobUrlMap.set(url, blobUrl);
+	}).catch(() => {});
+
+	return url;
+});
+
+THREE.DefaultLoadingManager.setURLModifier((url) => {
+	if (url.startsWith("data:") || url.startsWith("blob:")) return url;
+	if (blobUrlMap.has(url)) return blobUrlMap.get(url)!;
+	return url;
+});
+
+
 
 
 // --- UI Elements (declared early to avoid temporal dead zone issues) ---
@@ -262,9 +290,10 @@ const aoMapWall = textureLoader.load(
 const metalnessMapWall = textureLoader.load(
 	"textures/Poliigon_PlasterPainted_7664/Metallic.jpg",
 );
-const displacementMapWall = textureLoader.load(
+textureLoader.load(
 	"textures/Poliigon_PlasterPainted_7664/Displacement.tiff",
 );
+
 
 baseColorWall.colorSpace = THREE.SRGBColorSpace;
 
